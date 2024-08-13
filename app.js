@@ -34,7 +34,7 @@ const io = require("socket.io")(server, {
 });
 
 // Varibales
-const PORT = 4000;
+const PORT = process.env.PORT;
 
 const mongoURi = process.env.MONGODB_URI;
 
@@ -113,7 +113,7 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", (message) => {
     io.to(message.chatId).emit("receiveMessage", message);
   });
-  socket.on("disconnect", () => {});
+  socket.on("disconnect", () => { });
 });
 
 // Logout route for every user
