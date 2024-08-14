@@ -43,7 +43,7 @@ const fetchDynamicFilters = async (req, res) => {
 };
 
 const fetchFilteredTalents = async (req, res) => {
-  const { location, industry, badges, shortlisted, liked, uploaded, skill } =
+  const { location, badges, shortlisted, liked, uploaded, skill } =
     req.body;
 
   let query = {};
@@ -56,10 +56,10 @@ const fetchFilteredTalents = async (req, res) => {
     query.skills = { $regex: new RegExp(skill, "i") };
   }
 
-  const industryFilters = Object.keys(industry).filter((key) => industry[key]);
-  if (industryFilters.length > 0) {
-    query.skills = { $in: industryFilters };
-  }
+  // const industryFilters = Object.keys(industry).filter((key) => industry[key]);
+  // if (industryFilters.length > 0) {
+  //   query.skills = { $in: industryFilters };
+  // }
 
   const badgeFilters = Object.keys(badges).filter((key) => badges[key]);
   if (badgeFilters.length > 0) {
