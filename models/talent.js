@@ -69,8 +69,8 @@ const talentSchema = new mongoose.Schema({
     default: false,
   },
   displayLanguage: {
-    type: Boolean,
-    default: false,
+    type: String,
+    default: "english",
   },
   privateAccount: {
     type: Boolean,

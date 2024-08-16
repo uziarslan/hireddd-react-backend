@@ -12,13 +12,17 @@ const uploadVideo = (url) => {
     }
 
     // Upload the video from URL to Cloudinary
-    uploader.upload(url, { resource_type: "video", folder: "Hireddd React" }, (error, result) => {
-      if (error) {
-        console.error("Cloudinary Upload Error:", error);
-        return reject(error);
+    uploader.upload(
+      url,
+      { resource_type: "video", folder: "Hireddd React" },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary Upload Error:", error);
+          return reject(error);
+        }
+        resolve(result.secure_url);
       }
-      resolve(result.secure_url);
-    });
+    );
   });
 };
 
@@ -29,8 +33,10 @@ const talentProfileHandler = async (req, res) => {
   const { id } = req.user;
 
   // Check for required fields
-  if (!firstName) return res.status(400).json({ error: "First name is required" });
-  if (!lastName) return res.status(400).json({ error: "Last name is required" });
+  if (!firstName)
+    return res.status(400).json({ error: "First name is required" });
+  if (!lastName)
+    return res.status(400).json({ error: "Last name is required" });
   if (!location) return res.status(400).json({ error: "Location is required" });
   if (!about) return res.status(400).json({ error: "About is required" });
   if (!skills) return res.status(400).json({ error: "Skills are required" });
@@ -67,24 +73,28 @@ const talentProfileHandler = async (req, res) => {
 
     // Remove the old video from Cloudinary
     if (req.user.video && req.user.video.filename) {
-      await uploader.destroy(req.user.video.filename, { resource_type: "video" });
+      await uploader.destroy(req.user.video.filename, {
+        resource_type: "video",
+      });
     }
 
     try {
       // If videoFile.path is a Cloudinary URL, use it directly
-      const videoUrl = videoFile.path.startsWith('http')
-        ? videoFile.path  // If it's already a URL, use it directly
-        : await uploadVideo(videoFile.path);  // Otherwise, upload it
+      const videoUrl = videoFile.path.startsWith("http")
+        ? videoFile.path // If it's already a URL, use it directly
+        : await uploadVideo(videoFile.path); // Otherwise, upload it
 
       updatedUser.video = {
         filename: videoFile.filename,
         path: videoUrl,
         fileType: videoFile.mimetype,
-        newVideo: true
+        newVideo: true,
       };
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: "Error uploading video to Cloudinary" });
+      return res
+        .status(500)
+        .json({ error: "Error uploading video to Cloudinary" });
     }
   }
 
@@ -97,8 +107,6 @@ const talentProfileHandler = async (req, res) => {
 
   res.status(200).json({ success: "Profile updated successfully" });
 };
-
-
 
 const organizationHandler = async (req, res) => {
   const { firstName, lastName, location, about, industry } = req.body;
@@ -156,7 +164,19 @@ const organizationHandler = async (req, res) => {
   return res.status(200).json({ success: "Profile updated successfully" });
 };
 
+const talentSettings = async (req, res) => {
+  const { id } = req.user;
+  await Talent.findByIdAndUpdate(
+    id,
+    {
+      ...req.body,
+    },
+    { new: true }
+  );
+};
+
 module.exports = {
   talentProfileHandler,
   organizationHandler,
+  talentSettings,
 };

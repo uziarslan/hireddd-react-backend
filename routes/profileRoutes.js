@@ -7,6 +7,7 @@ const upload = multer({ storage });
 const {
   talentProfileHandler,
   organizationHandler,
+  talentSettings,
 } = require("../controllers/profile");
 
 const router = express();
@@ -17,7 +18,7 @@ router.post(
   protect,
   upload.fields([
     { name: "profile", maxCount: 1 },
-    { name: "video", maxCount: 1 }
+    { name: "video", maxCount: 1 },
   ]),
   wrapAsync(talentProfileHandler)
 );
@@ -29,5 +30,8 @@ router.post(
   upload.single("profile"),
   wrapAsync(organizationHandler)
 );
+
+// Talent Profile Settings
+router.post("/talent/setting", protect, wrapAsync(talentSettings));
 
 module.exports = router;
