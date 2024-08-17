@@ -41,8 +41,8 @@ const talentSchema = new mongoose.Schema({
     fileType: String,
     newVideo: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   phone: {
     type: String,
@@ -85,6 +85,14 @@ const talentSchema = new mongoose.Schema({
     default: false,
   },
   hideLocation: {
+    type: Boolean,
+    default: false,
+  },
+  availability: {
+    type: Boolean,
+    default: true,
+  },
+  trending: {
     type: Boolean,
     default: false,
   },

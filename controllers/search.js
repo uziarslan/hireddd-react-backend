@@ -22,7 +22,7 @@ function getDateRangeForUploadedFilter(uploaded) {
 }
 
 const fetchAllTalents = async (req, res) => {
-  const talents = await Talent.find({ profileCompleted: true });
+  const talents = await Talent.find();
   res.status(200).json(talents);
 };
 
@@ -43,8 +43,7 @@ const fetchDynamicFilters = async (req, res) => {
 };
 
 const fetchFilteredTalents = async (req, res) => {
-  const { location, badges, shortlisted, liked, uploaded, skill } =
-    req.body;
+  const { location, badges, shortlisted, liked, uploaded, skill } = req.body;
 
   let query = {};
 
@@ -56,23 +55,20 @@ const fetchFilteredTalents = async (req, res) => {
     query.skills = { $regex: new RegExp(skill, "i") };
   }
 
-  // const industryFilters = Object.keys(industry).filter((key) => industry[key]);
-  // if (industryFilters.length > 0) {
-  //   query.skills = { $in: industryFilters };
-  // }
-
   const badgeFilters = Object.keys(badges).filter((key) => badges[key]);
   if (badgeFilters.length > 0) {
-    query.$or = [];
-    if (badges.profileCompleted) {
-      query.$or.push({ profileCompleted: true });
-    }
-    if (badges.ableToStartRightAway) {
-      query.$or.push({ skills: "Able to start right away" });
-    }
-    // if (badges.trendingProfile) {
-
-    // }
+    query.$and = badgeFilters.map((badge) => {
+      switch (badge) {
+        case "profileCompleted":
+          return { profileCompleted: true };
+        case "ableToStartRightAway":
+          return { availability: true };
+        case "trendingProfile":
+          return { trendingProfile: true };
+        default:
+          return {};
+      }
+    });
   }
 
   // if (shortlisted) {
