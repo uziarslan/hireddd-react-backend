@@ -32,16 +32,6 @@ router.post(
   wrapAsync(organizationHandler)
 );
 
-
-// Organization Profile Handler
-router.post(
-  "/org/profile",
-  protect,
-  upload.single("profile"),
-  wrapAsync(organizationHandler)
-);
-
-// Organization Profile Edit Handler
 router.post(
   "/org/profile/edit",
   protect,
@@ -49,10 +39,54 @@ router.post(
   wrapAsync(organizationProfileEditHandler)
 );
 
-// Talent Profile Settings
-router.post("/talent/setting", protect, wrapAsync(talentSettings));
 
+// Talent Profile Settings - Completed By Dylan
+router.post(
+  "/talent/setting", 
+  protect, 
+  wrapAsync(async (req, res) => {
+    const {
+      privateAccount,
+      hideLikesAndShortlisted,
+      hideBadges,
+      hideLocation,
+      likedNotification,
+      shortlistedNotification,
+      availability,
+    } = req.body;
 
+    try {
+      const userId = req.user.id;
+      const Talent = require("../models/talent");
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        userId,
+        {
+          privateAccount,
+          hideLikesAndShortlisted,
+          hideBadges,
+          hideLocation,
+          likedNotification,
+          shortlistedNotification,
+          availability,
+        },
+        { new: true } // Return the updated document
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Settings updated successfully",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      console.error("Error updating settings:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update settings",
+        error: error.message,
+      });
+    }
+  })
+);
 
 //----------------------------------------------------
 //Talent Document Upload *May be same for org* - DYLAN 
