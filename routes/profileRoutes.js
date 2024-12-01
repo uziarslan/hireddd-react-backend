@@ -221,6 +221,114 @@ router.put(
   })
 );
 
+// Update summary and skills -- MONTE
+// Summary
+router.put(
+  "/talent/edit-about/:talentId",
+  wrapAsync(async (req, res) => {
+
+    try {
+      const talentId = req.params.talentId;
+      const updatedSummary = req.body.about; 
+
+      // Not allowing overwrite to null
+      if (!updatedSummary) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Can't leave summary empty" 
+          });
+      }
+
+      // Limiting the length of the summary 
+      const maxSummarySize = 5000;  // 5000 characters?
+      if (updatedSummary.length > maxSummarySize) {
+        return res.status(400).json({
+          success: false,
+          message: "This exceeds the character limit",
+        });
+      }
+
+      // Update the Talent document in MongoDB
+      const Talent = require("../models/talent");
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        talentId,
+        { about: updatedSummary }, // Set the talent summary
+        { new: true }
+      );
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        message: "Summary successfully updated",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      // Catch and handle unexpected errors
+      console.error("Error updating summary:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Please try again later.",
+        error: error.message,
+      });
+    }
+  })
+);
+
+// Skills - This also handles delete
+router.put(
+  "/talent/edit-skills/:talentId",
+  wrapAsync(async (req, res) => {
+
+    try {
+      const talentId = req.params.talentId;
+      const updatedSkill = req.body.rawSkills; 
+      // Get skill array, remove trailing spaces, filter out nulls
+      const skillItems = updatedSkill.split(',').map(skill => skill.trim()).filter(skill => skill);
+
+      if (!updatedSkill) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Can't leave skills empty" });
+      }
+
+      // Limit the number of skills
+      const maxSkillSize = 50;  // 50 skill?
+      if (skillItems.length > maxSkillSize) {
+        return res.status(400).json({
+          success: false,
+          message: "This exceeds the skill count limit",
+        });
+      }
+
+      // Update the Talent document in MongoDB
+      const Talent = require("../models/talent");
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        talentId,
+        { $set: { skills: skillItems } }, // Set the skills to new skill array
+        { new: true }
+      );
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        message: "Summary successfully updated",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      // Catch and handle unexpected errors
+      console.error("Error updating summary:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Please try again later.",
+        error: error.message,
+      });
+    }
+  })
+);
+
+
+
+
 
 
 
