@@ -164,6 +164,41 @@ const organizationHandler = async (req, res) => {
   return res.status(200).json({ success: "Profile updated successfully" });
 };
 
+
+const organizationProfileEditHandler = async (req, res) => {
+    const { about, website, industry, companySize, location } = req.body;
+    const { id } = req.user;
+
+    // Ensure the ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid user ID provided." });
+    }
+
+    const updatedOrg = {};
+    if (about) updatedOrg.about = about;
+    if (website) updatedOrg.website = website;
+    if (industry) updatedOrg.industry = industry;
+    if (companySize) updatedOrg.companySize = companySize;
+    if (location) updatedOrg.location = location;
+
+    // update the organization
+    const org = await Organization.findByIdAndUpdate(
+      id,
+      { $set: updatedOrg },
+      { new: true }
+    );
+
+    if (!org) {
+      return res.status(404).json({ error: "Organization profile not found for the provided user ID." });
+    }
+
+    // Return success with the updated organization data
+    return res.status(200).json({
+      success: "Profile updated successfully.",
+      organization: org,
+    });
+};
+
 const talentSettings = async (req, res) => {
   const { id } = req.user;
   await Talent.findByIdAndUpdate(
@@ -178,5 +213,6 @@ const talentSettings = async (req, res) => {
 module.exports = {
   talentProfileHandler,
   organizationHandler,
+  organizationProfileEditHandler,
   talentSettings,
 };

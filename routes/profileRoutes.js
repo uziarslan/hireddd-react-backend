@@ -8,6 +8,7 @@ const {
   talentProfileHandler,
   organizationHandler,
   talentSettings,
+  organizationProfileEditHandler,
 } = require("../controllers/profile");
 
 const router = express();
@@ -29,6 +30,23 @@ router.post(
   protect,
   upload.single("profile"),
   wrapAsync(organizationHandler)
+);
+
+
+// Organization Profile Handler
+router.post(
+  "/org/profile",
+  protect,
+  upload.single("profile"),
+  wrapAsync(organizationHandler)
+);
+
+// Organization Profile Edit Handler
+router.post(
+  "/org/profile/edit",
+  protect,
+  upload.single("profile"),
+  wrapAsync(organizationProfileEditHandler)
 );
 
 // Talent Profile Settings
