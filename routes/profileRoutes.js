@@ -156,6 +156,38 @@ router.delete(
   })
 );
 
+//Edit Contact Informaiton
+router.put(
+  "/talent/update-contact-details/:id",
+  wrapAsync(async (req, res) => {
+    const { id } = req.params; // Extract User ID
+    const { phone, email } = req.body; // Extract phone and email
+
+    try {
+      const Talent = require("../models/talent"); // Ensure the model is imported
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        id,
+        { phone, username: email },
+        { new: true } // Return the updated document
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Contact details updated successfully",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      console.error("Error updating contact details:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update contact details",
+        error: error.message,
+      });
+    }
+  })
+);
+
+
 
 
 //-----------------------------------------------------------------------
