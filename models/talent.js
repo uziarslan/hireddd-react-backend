@@ -53,9 +53,12 @@ const talentSchema = new mongoose.Schema({
       href: String,
     },
   ],
+  //MODIFIED - DYLAN
   documents: [
     {
-      href: String,
+      fileType: { type: String, required: true },
+      fileName: { type: String, required: true },
+      fileData: { type: String, required: true }, // This stores the Base64-encoded data
     },
   ],
   socialMediaLinks: [
