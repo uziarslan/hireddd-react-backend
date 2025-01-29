@@ -173,7 +173,7 @@ router.delete(
 //Upload resume - Dylan
 router.put(
   "/talent/upload-resume/:id",
-  upload.single("video"), // ✅ Expecting a video file
+  upload.single("video"), // 
   wrapAsync(async (req, res) => {
     const talentId = req.params.id;
 
@@ -196,7 +196,7 @@ router.put(
     
         console.log("Deleting old resume video with Public ID:", publicId);
         
-        await deleteVideo(publicId); // ✅ Now uses the function from index.js
+        await deleteVideo(publicId); 
         console.log("Old resume video deleted successfully");
       } catch (err) {
         console.error("Failed to delete old resume video:", err);
@@ -204,12 +204,12 @@ router.put(
     }
      
 
-    // Save new video URL in the database**
+    // Save new video URL in the database*
     const updatedTalent = await Talent.findByIdAndUpdate(
       talentId,
       {
         "video.filename": req.file.filename,
-        "video.path": req.file.path, // ✅ New Cloudinary video URL
+        "video.path": req.file.path, 
         "video.fileType": req.file.mimetype,
         "video.newVideo": true,
       },
@@ -219,7 +219,7 @@ router.put(
     res.status(200).json({
       success: true,
       message: "Resume video uploaded successfully.",
-      videoUrl: req.file.path, // ✅ New Cloudinary URL
+      videoUrl: req.file.path,
     });
   })
 );
