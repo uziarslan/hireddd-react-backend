@@ -170,6 +170,7 @@ router.delete(
   })
 );
 
+
 //Upload resume - Dylan
 router.put(
   "/talent/upload-resume/:id",
@@ -226,7 +227,7 @@ router.put(
 
 
 
-//Edit Contact Informaiton - Dylan
+//Edit Contact Information - Dylan
 router.put(
   "/talent/update-contact-details/:id",
   wrapAsync(async (req, res) => {
@@ -308,7 +309,78 @@ router.put(
   })
 );
 
-// Skills - This also handles delete
+// Update summary and skills -- MONTE
+// Summary -- Including both organization and talent
+router.put(
+  "/edit-about/:userId",
+  wrapAsync(async (req, res) => {
+
+    try {
+      const userId = req.params.userId;
+      const updatedSummary = req.body.about; 
+      const userType = req.body.userType; // 'talent' or 'organization'
+
+      // Not allowing overwrite to null
+      if (!updatedSummary) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Can't leave summary empty" 
+          });
+      }
+
+      // Limiting the length of the summary 
+      const maxSummarySize = 5000;  // 5000 characters?
+      if (updatedSummary.length > maxSummarySize) {
+        return res.status(400).json({
+          success: false,
+          message: "This exceeds the character limit",
+        });
+      }
+
+      let updatedUser;
+
+      // Determine user type and update accordingly
+      if (userType === 'talent') {
+        const Talent = require("../models/talent");
+        updatedUser = await Talent.findByIdAndUpdate(
+          userId,
+          { about: updatedSummary },
+          { new: true }
+        );
+      } else if (userType === 'organization') {
+        const Organization = require("../models/organization");
+        updatedUser = await Organization.findByIdAndUpdate(
+          userId,
+          { about: updatedSummary },
+          { new: true }
+        );
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid user type"
+        });
+      }
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        message: "Summary successfully updated",
+        user: updatedUser,
+      });
+
+    } catch (error) {
+      // Catch and handle unexpected errors
+      console.error("Error updating summary:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Please try again later.",
+        error: error.message,
+      });
+    }
+  })
+);
+
+// Skills - This also handles delete -- MONTE
 router.put(
   "/talent/edit-skills/:talentId",
   wrapAsync(async (req, res) => {
