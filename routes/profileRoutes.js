@@ -256,132 +256,10 @@ router.put(
 );
 
 
-// Update summary and skills -- MONTE
-// Summary
-router.put(
-  "/talent/edit-about/:talentId",
-  wrapAsync(async (req, res) => {
-
-    try {
-      const talentId = req.params.talentId;
-      const updatedSummary = req.body.about; 
-
-      // Not allowing overwrite to null
-      if (!updatedSummary) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Can't leave summary empty" 
-          });
-      }
-
-      // Limiting the length of the summary 
-      const maxSummarySize = 5000;  // 5000 characters?
-      if (updatedSummary.length > maxSummarySize) {
-        return res.status(400).json({
-          success: false,
-          message: "This exceeds the character limit",
-        });
-      }
-
-      // Update the Talent document in MongoDB
-      const Talent = require("../models/talent");
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { about: updatedSummary }, // Set the talent summary
-        { new: true }
-      );
-
-      // Success response
-      res.status(200).json({
-        success: true,
-        message: "Summary successfully updated",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      // Catch and handle unexpected errors
-      console.error("Error updating summary:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Please try again later.",
-        error: error.message,
-      });
-    }
-  })
-);
-
-// // Update summary and skills -- MONTE
-// // Summary -- Including both organization and talent
-// router.put(
-//   "/edit-about/:userId",
-//   wrapAsync(async (req, res) => {
-
-//     try {
-//       const userId = req.params.userId;
-//       const updatedSummary = req.body.about; 
-//       const userType = req.body.userType; // 'talent' or 'organization'
-
-//       // Not allowing overwrite to null
-//       if (!updatedSummary) {
-//         return res.status(400).json({ 
-//             success: false, 
-//             message: "Can't leave summary empty" 
-//           });
-//       }
-
-//       // Limiting the length of the summary 
-//       const maxSummarySize = 5000;  // 5000 characters?
-//       if (updatedSummary.length > maxSummarySize) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "This exceeds the character limit",
-//         });
-//       }
-
-//       let updatedUser;
-
-//       // Determine user type and update accordingly
-//       if (userType === 'talent') {
-//         const Talent = require("../models/talent");
-//         updatedUser = await Talent.findByIdAndUpdate(
-//           userId,
-//           { about: updatedSummary },
-//           { new: true }
-//         );
-//       } else if (userType === 'organization') {
-//         const Organization = require("../models/organization");
-//         updatedUser = await Organization.findByIdAndUpdate(
-//           userId,
-//           { about: updatedSummary },
-//           { new: true }
-//         );
-//       } else {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Invalid user type"
-//         });
-//       }
-
-//       // Success response
-//       res.status(200).json({
-//         success: true,
-//         message: "Summary successfully updated",
-//         user: updatedUser,
-//       });
-
-//     } catch (error) {
-//       // Catch and handle unexpected errors
-//       console.error("Error updating summary:", error.message);
-//       res.status(500).json({
-//         success: false,
-//         message: "Please try again later.",
-//         error: error.message,
-//       });
-//     }
-//   })
-// );
+// text datafields -- MONTE
 
 // Update datafields -- MONTE
-// Summary, industry, website, hq 
+// Summary, industry, website, location, company size
 router.put(
   "/edit-profile/:userId",
   wrapAsync(async (req, res) => {
@@ -390,19 +268,21 @@ router.put(
       const userId = req.params.userId;
       const updatedData = req.body.data; 
       const userType = req.body.userType; // 'talent' or 'organization'
-      const dataField = req.body.dataField; // Industry, website, hq, summary ...
+      const dataField = req.body.dataField; // Industry, website, location, summary ...
+      console.log(req.body)
 
       // Define max length for each dataField
       const maxLengths = {
         about: 5000,       
         industry: 255,      
         website: 255,       
-        hq: 255,    
+        hq: 255,
+        companySize: 27, 
       };
 
       // Ensure the right data field for the user type and right usertype
       if (userType === 'organization') {
-        const validOrgFields = ['industry', 'website', 'location', 'about']; 
+        const validOrgFields = ['industry', 'website', 'location', 'about', "companySize"]; 
         if (dataField && !validOrgFields.includes(dataField)) {
           return res.status(400).json({
             success: false,
