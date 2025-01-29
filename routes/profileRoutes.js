@@ -2,7 +2,7 @@ const express = require("express");
 const wrapAsync = require("../utils/wrapAsync");
 const { protect } = require("../middlewares/authMiddleware");
 const multer = require("multer");
-const { storage } = require("../cloudinary");
+const { storage, cloudinary, deleteVideo } = require("../cloudinary");
 const upload = multer({ storage });
 const {
   talentProfileHandler,
@@ -90,75 +90,58 @@ router.post(
 
 //----------------------------------------------------
 //Talent Document Upload *May be same for org* - DYLAN 
-
 router.post(
   "/talent/upload-document/:id",
   wrapAsync(async (req, res) => {
+    const talentId = req.params.id;
+    const document = req.body.document; // Base64 string
+    const fileName = req.body.fileName; // Original file name
 
-    try {
-      const talentId = req.params.id;
-      const document = req.body.document; // Base64 string
-      const fileName = req.body.fileName; // Original file name
-
-
-      if (!document) {
-        return res
-          .status(400)
-          .json({ success: false, message: "No document provided" });
-      }
-
-      if (!document.startsWith("data:application/pdf;base64,")) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid file type. Only PDF files are allowed.",
-        });
-      }
-
-      // Limit the file size to 5MB
-      const maxFileSize = 15 * 1024 * 1024; 
-      const fileSizeInBytes =
-        (document.length * 3) / 4 -
-        (document.endsWith("==") ? 2 : document.endsWith("=") ? 1 : 0);
-
-      if (fileSizeInBytes > maxFileSize) {
-        return res.status(400).json({
-          success: false,
-          message: "File size exceeds the limit.",
-        });
-      }
-
-      // Create a document object
-      const documentObject = {
-        fileType: "application/pdf",
-        fileName: fileName || `document-${Date.now()}.pdf`,
-        fileData: document,
-      };
-
-      // Update the Talent document in MongoDB
-      const Talent = require("../models/talent");
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { $push: { documents: documentObject } }, // Add the document object to the array
-        { new: true }
-      );
-
-      // Success response
-      res.status(200).json({
-        success: true,
-        message: "Document uploaded successfully",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      // Catch and handle unexpected errors
-      console.error("Error uploading document:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Please try again later.",
-        error: error.message,
-      });
+    if (!document) {
+      throw new Error("No document provided.");
     }
+
+    if (!document.startsWith("data:application/pdf;base64,")) {
+      const error = new Error("Invalid file type. Only PDF files are allowed.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Limit the file size to 15MB
+    const maxFileSize = 15 * 1024 * 1024;
+    const fileSizeInBytes =
+      (document.length * 3) / 4 - (document.endsWith("==") ? 2 : document.endsWith("=") ? 1 : 0);
+
+    if (fileSizeInBytes > maxFileSize) {
+      const error = new Error("File size exceeds the limit.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Create a document object
+    const documentObject = {
+      fileType: "application/pdf",
+      fileName: fileName || `document-${Date.now()}.pdf`,
+      fileData: document,
+    };
+
+    // Update the Talent document in MongoDB
+    const Talent = require("../models/talent");
+    const updatedTalent = await Talent.findByIdAndUpdate(
+      talentId,
+      { $push: { documents: documentObject } },
+      { new: true }
+    );
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      message: "Document uploaded successfully",
+      talent: updatedTalent,
+    });
   })
 );
+
 
 //Delete Document -- DYLAN
 router.delete(
@@ -166,60 +149,111 @@ router.delete(
   wrapAsync(async (req, res) => {
     const { talentId, docId } = req.params;
 
-    try {
-     
-      const Talent = require("../models/talent");
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { $pull: { documents: { _id: docId } } },
-        { new: true }
-      );
+    const Talent = require("../models/talent");
+    const updatedTalent = await Talent.findByIdAndUpdate(
+      talentId,
+      { $pull: { documents: { _id: docId } } },
+      { new: true }
+    );
 
-      res.status(200).json({
-        success: true,
-        message: "Document deleted successfully",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete document",
-        error: error.message,
-      });
+    if (!updatedTalent) {
+      const error = new Error("Talent not found or document does not exist.");
+      error.statusCode = 404;
+      throw error;
     }
+
+    res.status(200).json({
+      success: true,
+      message: "Document deleted successfully",
+      talent: updatedTalent,
+    });
   })
 );
 
-//Edit Contact Informaiton
+//Upload resume - Dylan
+router.put(
+  "/talent/upload-resume/:id",
+  upload.single("video"), // ✅ Expecting a video file
+  wrapAsync(async (req, res) => {
+    const talentId = req.params.id;
+
+    if (!req.file || !req.file.path) {
+      throw new Error("No video uploaded.");
+    }
+
+    const Talent = require("../models/talent");
+    const talent = await Talent.findById(talentId);
+
+    if (!talent) {
+      throw new Error("Talent not found.");
+    }
+
+    //  Delete old video from Cloudinary if it exists**
+    if (talent.video && talent.video.path) {
+      try {
+        const oldVideoUrl = talent.video.path;
+        const publicId = oldVideoUrl.split("/").pop().split(".")[0];
+    
+        console.log("Deleting old resume video with Public ID:", publicId);
+        
+        await deleteVideo(publicId); // ✅ Now uses the function from index.js
+        console.log("Old resume video deleted successfully");
+      } catch (err) {
+        console.error("Failed to delete old resume video:", err);
+      }
+    }
+     
+
+    // Save new video URL in the database**
+    const updatedTalent = await Talent.findByIdAndUpdate(
+      talentId,
+      {
+        "video.filename": req.file.filename,
+        "video.path": req.file.path, // ✅ New Cloudinary video URL
+        "video.fileType": req.file.mimetype,
+        "video.newVideo": true,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Resume video uploaded successfully.",
+      videoUrl: req.file.path, // ✅ New Cloudinary URL
+    });
+  })
+);
+
+
+
+//Edit Contact Informaiton - Dylan
 router.put(
   "/talent/update-contact-details/:id",
   wrapAsync(async (req, res) => {
     const { id } = req.params; // Extract User ID
     const { phone, email } = req.body; // Extract phone and email
 
-    try {
-      const Talent = require("../models/talent"); // Ensure the model is imported
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        id,
-        { phone, username: email },
-        { new: true } // Return the updated document
-      );
+    const Talent = require("../models/talent"); // Ensure the model is imported
+    const updatedTalent = await Talent.findByIdAndUpdate(
+      id,
+      { phone, username: email },
+      { new: true }
+    );
 
-      res.status(200).json({
-        success: true,
-        message: "Contact details updated successfully",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      console.error("Error updating contact details:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Failed to update contact details",
-        error: error.message,
-      });
+    if (!updatedTalent) {
+      const error = new Error("Talent not found.");
+      error.statusCode = 404;
+      throw error;
     }
+
+    res.status(200).json({
+      success: true,
+      message: "Contact details updated successfully",
+      talent: updatedTalent,
+    });
   })
 );
+
 
 // Update summary and skills -- MONTE
 // Summary
