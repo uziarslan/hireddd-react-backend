@@ -309,68 +309,170 @@ router.put(
   })
 );
 
-// Update summary and skills -- MONTE
-// Summary -- Including both organization and talent
+// // Update summary and skills -- MONTE
+// // Summary -- Including both organization and talent
+// router.put(
+//   "/edit-about/:userId",
+//   wrapAsync(async (req, res) => {
+
+//     try {
+//       const userId = req.params.userId;
+//       const updatedSummary = req.body.about; 
+//       const userType = req.body.userType; // 'talent' or 'organization'
+
+//       // Not allowing overwrite to null
+//       if (!updatedSummary) {
+//         return res.status(400).json({ 
+//             success: false, 
+//             message: "Can't leave summary empty" 
+//           });
+//       }
+
+//       // Limiting the length of the summary 
+//       const maxSummarySize = 5000;  // 5000 characters?
+//       if (updatedSummary.length > maxSummarySize) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "This exceeds the character limit",
+//         });
+//       }
+
+//       let updatedUser;
+
+//       // Determine user type and update accordingly
+//       if (userType === 'talent') {
+//         const Talent = require("../models/talent");
+//         updatedUser = await Talent.findByIdAndUpdate(
+//           userId,
+//           { about: updatedSummary },
+//           { new: true }
+//         );
+//       } else if (userType === 'organization') {
+//         const Organization = require("../models/organization");
+//         updatedUser = await Organization.findByIdAndUpdate(
+//           userId,
+//           { about: updatedSummary },
+//           { new: true }
+//         );
+//       } else {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid user type"
+//         });
+//       }
+
+//       // Success response
+//       res.status(200).json({
+//         success: true,
+//         message: "Summary successfully updated",
+//         user: updatedUser,
+//       });
+
+//     } catch (error) {
+//       // Catch and handle unexpected errors
+//       console.error("Error updating summary:", error.message);
+//       res.status(500).json({
+//         success: false,
+//         message: "Please try again later.",
+//         error: error.message,
+//       });
+//     }
+//   })
+// );
+
+// Update datafields -- MONTE
+// Summary, industry, website, hq 
 router.put(
-  "/edit-about/:userId",
+  "/edit-profile/:userId",
   wrapAsync(async (req, res) => {
 
     try {
       const userId = req.params.userId;
-      const updatedSummary = req.body.about; 
+      const updatedData = req.body.data; 
       const userType = req.body.userType; // 'talent' or 'organization'
+      const dataField = req.body.dataField; // Industry, website, hq, summary ...
+
+      // Define max length for each dataField
+      const maxLengths = {
+        about: 5000,       
+        industry: 255,      
+        website: 255,       
+        hq: 255,    
+      };
+
+      // Ensure the right data field for the user type and right usertype
+      if (userType === 'organization') {
+        const validOrgFields = ['industry', 'website', 'location', 'about']; 
+        if (dataField && !validOrgFields.includes(dataField)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid field ${dataField} for organization`,
+          });
+        }
+      } else if (userType === 'talent') {
+        const validTalentFields = ['about']; 
+        if (dataField && !validTalentFields.includes(dataField)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid field ${dataField} for talent`,
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid user type",
+        });
+      }
 
       // Not allowing overwrite to null
-      if (!updatedSummary) {
+      if (!updatedData) {
         return res.status(400).json({ 
             success: false, 
-            message: "Can't leave summary empty" 
+            message: `Can't leave ${dataField} empty`
           });
       }
 
       // Limiting the length of the summary 
-      const maxSummarySize = 5000;  // 5000 characters?
-      if (updatedSummary.length > maxSummarySize) {
+      const maxDataSize = maxLengths[dataField] ?? 1000;  // 250 characters?
+      if (updatedData.length > maxDataSize) {
         return res.status(400).json({
           success: false,
-          message: "This exceeds the character limit",
+          message: `This exceeds the character limit of ${maxDataSize}`,
         });
       }
 
       let updatedUser;
+      // Creating data dictionary for the selected datafields
+      const updateField = {};
+      updateField[dataField] = updatedData;
 
       // Determine user type and update accordingly
       if (userType === 'talent') {
         const Talent = require("../models/talent");
         updatedUser = await Talent.findByIdAndUpdate(
           userId,
-          { about: updatedSummary },
+          updateField,
           { new: true }
         );
       } else if (userType === 'organization') {
         const Organization = require("../models/organization");
         updatedUser = await Organization.findByIdAndUpdate(
           userId,
-          { about: updatedSummary },
+          updateField,
           { new: true }
         );
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid user type"
-        });
-      }
+      } 
 
       // Success response
       res.status(200).json({
         success: true,
-        message: "Summary successfully updated",
+        message: `${dataField} successfully updated`,
         user: updatedUser,
       });
 
     } catch (error) {
       // Catch and handle unexpected errors
-      console.error("Error updating summary:", error.message);
+      console.error(`Error updating ${dataField}:`, error.message);
       res.status(500).json({
         success: false,
         message: "Please try again later.",
@@ -380,7 +482,7 @@ router.put(
   })
 );
 
-// Skills - This also handles delete -- MONTE
+// Update Skills - This also handles delete -- MONTE
 router.put(
   "/talent/edit-skills/:talentId",
   wrapAsync(async (req, res) => {
@@ -431,10 +533,6 @@ router.put(
     }
   })
 );
-
-
-
-
 
 
 
