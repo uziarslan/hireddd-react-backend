@@ -28,21 +28,7 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const deleteVideo = async (publicId) => {
-  try {
-    const fullPublicId = `Hireddd React/${publicId}`; // ✅ Add folder path
-    const result = await cloudinary.api.delete_resources([fullPublicId], { resource_type: "video" });
-
-    console.log("Cloudinary video deleted:", result);
-    return result;
-  } catch (error) {
-    console.error("Error deleting Cloudinary video:", error);
-    throw error;
-  }
-};
-
 module.exports = {
   cloudinary,
   storage,
-  deleteVideo,
 };
