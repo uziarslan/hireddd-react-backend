@@ -2,7 +2,6 @@ const express = require("express");
 const wrapAsync = require("../utils/wrapAsync");
 const { protect } = require("../middlewares/authMiddleware");
 const multer = require("multer");
-const Talent = require("../models/talent");
 const { storage } = require("../cloudinary");
 const upload = multer({ storage });
 const {
@@ -11,90 +10,8 @@ const {
   talentSettings,
   organizationProfileEditHandler,
 } = require("../controllers/profile");
-// -- AYUSHI
-const router = express.Router(); // Use express.Router()
-router.put(
-  "/talent/edit-portfolio/:talentId",
-  protect,
-  wrapAsync(async (req, res) => {
-    const { talentId } = req.params;
-    const { portfolios } = req.body; // Updated to match the new structure
 
-    try {
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { portfolios },
-        { new: true } // Return the updated document
-      );
-
-      if (!updatedTalent) {
-        return res.status(404).json({
-          success: false,
-          message: "Talent not found",
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "Portfolio section updated successfully",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      console.error("Error updating portfolio section:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Failed to update portfolio section",
-        error: error.message,
-      });
-    }
-  })
-);
-// -- AYUSHI
-// Update Portfolio Links
-router.put(
-  "/talent/edit-portfolio/:talentId",
-  protect,
-  wrapAsync(async (req, res) => {
-    const {
-      privateAccount,
-      hideLikesAndShortlisted,
-      hideBadges,
-      hideLocation,
-      likedNotification,
-      shortlistedNotification,
-      availability,
-    } = req.body;
-
-    try {
-      const userId = req.user.id;
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        userId,
-        {
-          privateAccount,
-          hideLikesAndShortlisted,
-          hideBadges,
-          hideLocation,
-          likedNotification,
-          shortlistedNotification,
-          availability,
-        },
-        { new: true } // Return the updated document
-      );
-      res.status(200).json({
-        success: true,
-        message: "Portfolio section updated successfully",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      console.error("Error updating portfolio section:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Failed to update portfolio section",
-        error: error.message,
-      });
-    }
-  })
-);
+const router = express();
 
 // Talent Profile Handler
 router.post(
@@ -121,115 +38,12 @@ router.post(
   upload.single("profile"),
   wrapAsync(organizationProfileEditHandler)
 );
-// Update summary and skills -- MONTE
-// Summary
-router.put(
-  "/talent/edit-about/:talentId",
-  wrapAsync(async (req, res) => {
 
-    try {
-      const talentId = req.params.talentId;
-      const updatedSummary = req.body.about; 
-
-      // Not allowing overwrite to null
-      if (!updatedSummary) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Can't leave summary empty" 
-          });
-      }
-
-      // Limiting the length of the summary 
-      const maxSummarySize = 5000;  // 5000 characters?
-      if (updatedSummary.length > maxSummarySize) {
-        return res.status(400).json({
-          success: false,
-          message: "This exceeds the character limit",
-        });
-      }
-
-      // Update the Talent document in MongoDB
-      const Talent = require("../models/talent");
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { about: updatedSummary }, // Set the talent summary
-        { new: true }
-      );
-
-      // Success response
-      res.status(200).json({
-        success: true,
-        message: "Summary successfully updated",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      // Catch and handle unexpected errors
-      console.error("Error updating summary:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Please try again later.",
-        error: error.message,
-      });
-    }
-  })
-);
-
-// Skills - This also handles delete
-router.put(
-  "/talent/edit-skills/:talentId",
-  wrapAsync(async (req, res) => {
-
-    try {
-      const talentId = req.params.talentId;
-      const updatedSkill = req.body.rawSkills; 
-      // Get skill array, remove trailing spaces, filter out nulls
-      const skillItems = updatedSkill.split(',').map(skill => skill.trim()).filter(skill => skill);
-
-      if (!updatedSkill) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Can't leave skills empty" });
-      }
-
-      // Limit the number of skills
-      const maxSkillSize = 50;  // 50 skill?
-      if (skillItems.length > maxSkillSize) {
-        return res.status(400).json({
-          success: false,
-          message: "This exceeds the skill count limit",
-        });
-      }
-
-      // Update the Talent document in MongoDB
-      const Talent = require("../models/talent");
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        talentId,
-        { $set: { skills: skillItems } }, // Set the skills to new skill array
-        { new: true }
-      );
-
-      // Success response
-      res.status(200).json({
-        success: true,
-        message: "Summary successfully updated",
-        talent: updatedTalent,
-      });
-    } catch (error) {
-      // Catch and handle unexpected errors
-      console.error("Error updating summary:", error.message);
-      res.status(500).json({
-        success: false,
-        message: "Please try again later.",
-        error: error.message,
-      });
-    }
-  })
-);
 
 // Talent Profile Settings - Completed By Dylan
 router.post(
-  "/talent/edit-portfolio/:talentId",
-  protect,
+  "/talent/setting", 
+  protect, 
   wrapAsync(async (req, res) => {
     const {
       privateAccount,
@@ -243,6 +57,7 @@ router.post(
 
     try {
       const userId = req.user.id;
+      const Talent = require("../models/talent");
       const updatedTalent = await Talent.findByIdAndUpdate(
         userId,
         {
@@ -259,7 +74,7 @@ router.post(
 
       res.status(200).json({
         success: true,
-        message: "Portfolio section updated successfully",
+        message: "Settings updated successfully",
         talent: updatedTalent,
       });
     } catch (error) {
@@ -375,7 +190,152 @@ router.delete(
   })
 );
 
+//Edit Contact Informaiton
+router.put(
+  "/talent/update-contact-details/:id",
+  wrapAsync(async (req, res) => {
+    const { id } = req.params; // Extract User ID
+    const { phone, email } = req.body; // Extract phone and email
+
+    try {
+      const Talent = require("../models/talent"); // Ensure the model is imported
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        id,
+        { phone, username: email },
+        { new: true } // Return the updated document
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Contact details updated successfully",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      console.error("Error updating contact details:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update contact details",
+        error: error.message,
+      });
+    }
+  })
+);
+
+// Update summary and skills -- MONTE
+// Summary
+router.put(
+  "/talent/edit-about/:talentId",
+  wrapAsync(async (req, res) => {
+
+    try {
+      const talentId = req.params.talentId;
+      const updatedSummary = req.body.about; 
+
+      // Not allowing overwrite to null
+      if (!updatedSummary) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Can't leave summary empty" 
+          });
+      }
+
+      // Limiting the length of the summary 
+      const maxSummarySize = 5000;  // 5000 characters?
+      if (updatedSummary.length > maxSummarySize) {
+        return res.status(400).json({
+          success: false,
+          message: "This exceeds the character limit",
+        });
+      }
+
+      // Update the Talent document in MongoDB
+      const Talent = require("../models/talent");
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        talentId,
+        { about: updatedSummary }, // Set the talent summary
+        { new: true }
+      );
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        message: "Summary successfully updated",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      // Catch and handle unexpected errors
+      console.error("Error updating summary:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Please try again later.",
+        error: error.message,
+      });
+    }
+  })
+);
+
+// Skills - This also handles delete
+router.put(
+  "/talent/edit-skills/:talentId",
+  wrapAsync(async (req, res) => {
+
+    try {
+      const talentId = req.params.talentId;
+      const updatedSkill = req.body.rawSkills; 
+      // Get skill array, remove trailing spaces, filter out nulls
+      const skillItems = updatedSkill.split(',').map(skill => skill.trim()).filter(skill => skill);
+
+      if (!updatedSkill) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Can't leave skills empty" });
+      }
+
+      // Limit the number of skills
+      const maxSkillSize = 50;  // 50 skill?
+      if (skillItems.length > maxSkillSize) {
+        return res.status(400).json({
+          success: false,
+          message: "This exceeds the skill count limit",
+        });
+      }
+
+      // Update the Talent document in MongoDB
+      const Talent = require("../models/talent");
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        talentId,
+        { $set: { skills: skillItems } }, // Set the skills to new skill array
+        { new: true }
+      );
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        message: "Summary successfully updated",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      // Catch and handle unexpected errors
+      console.error("Error updating summary:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Please try again later.",
+        error: error.message,
+      });
+    }
+  })
+);
 
 
-// Export Router
+
+
+
+
+
+//-----------------------------------------------------------------------
+
+
 module.exports = router;
+
+
+
