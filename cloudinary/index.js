@@ -28,7 +28,19 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const deleteVideo = async (publicId) => {
+  try {
+    const fullPublicId = `Hireddd React/${publicId}`; 
+    const result = await cloudinary.api.delete_resources([fullPublicId], { resource_type: "video" });
+    return result;
+  } catch (error) {
+    console.error("Error deleting Cloudinary video:", error);
+    throw error;
+  }
+};
+
 module.exports = {
   cloudinary,
   storage,
+  deleteVideo,
 };

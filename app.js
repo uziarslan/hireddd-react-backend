@@ -26,6 +26,9 @@ const cors = require("cors");
 const wrapAsync = require("./utils/wrapAsync");
 const http = require("http");
 const server = http.createServer(app);
+//Error Handler - Dylan
+const { errorHandler } = require("./middlewares/errorHandlerMiddleware");
+//--------
 const io = require("socket.io")(server, {
   cors: {
     origin: process.env.DOMAIN_FRONTEND,
@@ -69,6 +72,10 @@ app.use(bodyParser.json());
 app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
+//dylan---
+app.use(errorHandler);
+//----
+
 
 // inititalizing Passport
 passport.use(
