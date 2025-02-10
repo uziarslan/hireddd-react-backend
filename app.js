@@ -5,12 +5,16 @@ require("./models/talent");
 require("./models/organization");
 require("./models/chat");
 require("./models/message");
+require("./models/job");
+require("./models/jobcandidate");
 const express = require("express");
 const app = express();
 const session = require("express-session");
 const mongoose = require("mongoose");
 const Talent = mongoose.model("Talent");
 const Organization = mongoose.model("Organization");
+const Job = mongoose.model("Job");
+const JobCandidate = mongoose.model("JobCandidate");
 const MongoDBStore = require("connect-mongo");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
@@ -18,6 +22,7 @@ const GoogleStrategy = require("passport-google-oauth20");
 const bodyParser = require("body-parser");
 const authenticationroutes = require("./routes/authentication");
 const profileRoutes = require("./routes/profileRoutes");
+const jobCandidateRoutes = require("./routes/jobCandidate");
 const chatRoutes = require("./routes/chat");
 const messageRoutes = require("./routes/message");
 const searchRoutes = require("./routes/searchPage");
@@ -111,6 +116,7 @@ app.use("/api/v1", profileRoutes);
 app.use("/api/v1", chatRoutes);
 app.use("/api/v1", messageRoutes);
 app.use("/api/v1", searchRoutes);
+app.use("/api/v1", jobCandidateRoutes);
 
 // SocketIo setup
 io.on("connection", (socket) => {
