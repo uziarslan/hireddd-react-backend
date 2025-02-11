@@ -2,6 +2,7 @@ const express = require("express");
 const wrapAsync = require("../utils/wrapAsync");
 const { protect } = require("../middlewares/authMiddleware");
 const multer = require("multer");
+const Talent = require("../models/talent");
 const { storage, cloudinary, deleteVideo } = require("../cloudinary");
 const upload = multer({ storage });
 const {
@@ -12,6 +13,90 @@ const {
 } = require("../controllers/profile");
 
 const router = express();
+
+router.put(
+  "/talent/edit-portfolio/:talentId",
+  protect,
+  wrapAsync(async (req, res) => {
+    const { talentId } = req.params;
+    const { portfolios } = req.body; // Updated to match the new structure
+
+    try {
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        talentId,
+        { portfolios },
+        { new: true } // Return the updated document
+      );
+
+      if (!updatedTalent) {
+        return res.status(404).json({
+          success: false,
+          message: "Talent not found",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Portfolio section updated successfully",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      console.error("Error updating portfolio section:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update portfolio section",
+        error: error.message,
+      });
+    }
+  })
+);
+// -- AYUSHI
+// Update Portfolio Links
+router.put(
+  "/talent/edit-portfolio/:talentId",
+  protect,
+  wrapAsync(async (req, res) => {
+    const {
+      privateAccount,
+      hideLikesAndShortlisted,
+      hideBadges,
+      hideLocation,
+      likedNotification,
+      shortlistedNotification,
+      availability,
+    } = req.body;
+
+    try {
+      const userId = req.user.id;
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        userId,
+        {
+          privateAccount,
+          hideLikesAndShortlisted,
+          hideBadges,
+          hideLocation,
+          likedNotification,
+          shortlistedNotification,
+          availability,
+        },
+        { new: true } // Return the updated document
+      );
+      res.status(200).json({
+        success: true,
+        message: "Portfolio section updated successfully",
+        talent: updatedTalent,
+      });
+    } catch (error) {
+      console.error("Error updating portfolio section:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update portfolio section",
+        error: error.message,
+      });
+    }
+  })
+);
+
 
 // Talent Profile Handler
 router.post(
