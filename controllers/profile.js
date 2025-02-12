@@ -4,6 +4,7 @@ const Organization = mongoose.model("Organization");
 const { uploader } = require("cloudinary").v2;
 
 // Function to upload video to Cloudinary
+// Note that this method is not currently used, uploading is handled automatically by multer and this method may be removed - Dylan
 const uploadVideo = (url) => {
   return new Promise((resolve, reject) => {
     if (!url) {
@@ -29,10 +30,8 @@ const uploadVideo = (url) => {
 const talentProfileHandler = async (req, res) => {
   const { skills, firstName, lastName, location, about } = req.body;
   const { profile, video } = req.files;
-
   const { id } = req.user;
 
-  // Check for required fields
   if (!firstName)
     return res.status(400).json({ error: "First name is required" });
   if (!lastName)
@@ -52,61 +51,54 @@ const talentProfileHandler = async (req, res) => {
     profileCompleted: true,
   };
 
-  // Handle profile image if uploaded
+  // Handle profile image upload
   if (profile) {
     const profileFile = profile[0];
-
-    // Remove the old profile image from Cloudinary
     if (req.user.profile && req.user.profile.filename) {
       await uploader.destroy(req.user.profile.filename);
     }
-
     updatedUser.profile = {
       filename: profileFile.filename,
       path: profileFile.path,
     };
   }
 
-  // Handle video if uploaded
+
   if (video) {
     const videoFile = video[0];
 
-    // Remove the old video from Cloudinary
-    if (req.user.video && req.user.video.filename) {
-      await uploader.destroy(req.user.video.filename, {
-        resource_type: "video",
-      });
-    }
-
     try {
-      // If videoFile.path is a Cloudinary URL, use it directly
-      const videoUrl = videoFile.path.startsWith("http")
-        ? videoFile.path // If it's already a URL, use it directly
-        : await uploadVideo(videoFile.path); // Otherwise, upload it
+      const talent = await Talent.findById(id);
+      if (!talent) return res.status(404).json({ error: "Talent not found" });
+
+      // Delete old video from Cloudinary if it exists
+      if (talent.video && talent.video.path) {
+        const oldVideoUrl = talent.video.path;
+        const publicId = oldVideoUrl.split("/").pop().split(".")[0]; 
+        await deleteVideo(publicId);
+      }
 
       updatedUser.video = {
         filename: videoFile.filename,
-        path: videoUrl,
+        path: videoFile.path,
         fileType: videoFile.mimetype,
         newVideo: true,
       };
     } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ error: "Error uploading video to Cloudinary" });
+      console.error("Error processing video:", error);
+      return res.status(500).json({ error: "Error processing video upload" });
     }
   }
 
-  // Update the user's profile in the database
   const talent = await Talent.findByIdAndUpdate(id, updatedUser, { new: true });
 
   if (!talent) {
     return res.status(404).json({ error: "Talent not found" });
   }
 
-  res.status(200).json({ success: "Profile updated successfully" });
+  res.status(200).json({ success: "Profile updated successfully", profile: talent });
 };
+
 
 const organizationHandler = async (req, res) => {
   const { firstName, lastName, location, about, industry } = req.body;
