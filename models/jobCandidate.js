@@ -21,7 +21,7 @@ const candidateSchema = new mongoose.Schema({
     },
     status:{
         type: String,
-        enum: ['shortlisted', 'interviewed', 'accepted', 'rejected'],  // enum?? maybe ogr can define its shortlists
+        enum: ['shortlisted', 'interviewed', 'assessed', 'hired', 'rejected'],  // enum?? maybe ogr can define its shortlists
         required: true, 
     },
 },{ 
