@@ -152,9 +152,9 @@ const updateCandidateStatusByJobTalent = async (req, res) => {
             { new: true }
         );
 
-        // if (!jobCandidate) {
-        //     return res.status(404).json({ error: "Candidate for this job not found" });
-        // }
+        if (!jobCandidate) {
+            return res.status(404).json({ error: "Candidate for this job not found" });
+        }
 
         res.status(200).json(jobCandidate);
     } catch (error) {
