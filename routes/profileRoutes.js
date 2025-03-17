@@ -15,6 +15,74 @@ const {
 const router = express();
 
 router.put(
+  "/talent/update-profile/:id",
+  protect,
+  upload.single("profile"), 
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+
+    if (!req.file || !req.file.path) {
+      console.error("No file uploaded");  // Log error
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    try {
+      const talent = await Talent.findById(id);
+      if (!talent) {
+        console.error("Talent not found"); // Log error
+        return res.status(404).json({ success: false, message: "Talent not found" });
+      }
+
+      // Log uploaded file details
+      console.log("File received:", req.file);
+
+      // Update database with new profile picture
+      const updatedTalent = await Talent.findByIdAndUpdate(
+        id,
+        { "profile.path": req.file.path },
+        { new: true }
+      );
+
+      console.log("Profile picture updated successfully"); // Log success
+      res.status(200).json({
+        success: true,
+        message: "Profile picture updated successfully",
+        profileUrl: req.file.path,
+      });
+
+    } catch (error) {
+      console.error("Error updating profile picture:", error); // Log error
+      res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+  })
+);
+
+router.get("/talent/get-data/:id", async (req, res) => {
+  try {
+    const talent = await Talent.findById(req.params.id);
+    if (!talent) {
+      return res.status(404).json({ error: "Talent not found" });
+    }
+
+    // Ensure all fields are included
+    res.json({
+      _id: talent._id,
+      firstName: talent.firstName,
+      lastName: talent.lastName,
+      about: talent.about || "",
+      skills: talent.skills || [],
+      phone: talent.phone || "",
+      username: talent.username, // Email
+      portfolios: talent.portfolios || [],
+      documents: talent.documents || [],
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Server error fetching talent" });
+  }
+});
+
+
+router.put(
   "/talent/edit-portfolio/:talentId",
   protect,
   wrapAsync(async (req, res) => {
@@ -93,49 +161,6 @@ router.put(
         message: "Failed to update portfolio section",
         error: error.message,
       });
-    }
-  })
-);
-
-router.put(
-  "/talent/update-profile/:id",
-  protect,
-  upload.single("profile"), 
-  wrapAsync(async (req, res) => {
-    const { id } = req.params;
-
-    if (!req.file || !req.file.path) {
-      console.error("No file uploaded");  // Log error
-      return res.status(400).json({ success: false, message: "No file uploaded" });
-    }
-
-    try {
-      const talent = await Talent.findById(id);
-      if (!talent) {
-        console.error("Talent not found"); // Log error
-        return res.status(404).json({ success: false, message: "Talent not found" });
-      }
-
-      // Log uploaded file details
-      console.log("File received:", req.file);
-
-      // Update database with new profile picture
-      const updatedTalent = await Talent.findByIdAndUpdate(
-        id,
-        { "profile.path": req.file.path },
-        { new: true }
-      );
-
-      console.log("Profile picture updated successfully"); // Log success
-      res.status(200).json({
-        success: true,
-        message: "Profile picture updated successfully",
-        profileUrl: req.file.path,
-      });
-
-    } catch (error) {
-      console.error("Error updating profile picture:", error); // Log error
-      res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
   })
 );
