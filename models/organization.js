@@ -48,6 +48,10 @@ const orgSchema = new mongoose.Schema({
   otp: {
     type: String,
   },
+  hasPremium:{
+    type: Boolean,
+    default: false
+  }
 });
 
 orgSchema.pre("save", async function (next) {

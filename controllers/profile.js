@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Talent = mongoose.model("Talent");
 const Organization = mongoose.model("Organization");
+
 const { uploader } = require("cloudinary").v2;
 
 // Function to upload video to Cloudinary
@@ -202,9 +203,52 @@ const talentSettings = async (req, res) => {
   );
 };
 
+const checkPremiumStatus = async (req, res) => {
+  try {
+    const organizationId = req.params.userId; // The user is an organization
+
+    // Find the organization by ID
+    const organization = await Organization.findById(organizationId);
+
+    if (!organization) {
+      return res.status(404).json({ hasPremium: false, message: "Organization not found" });
+    }
+
+    console.log({ hasPremium: organization.hasPremium || false })
+    return res.json({ hasPremium: organization.hasPremium || false });
+  } catch (error) {
+    console.error("Error checking premium status:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const buyPremium = async (req, res) => {
+  try {
+    const { organizationId } = req.params;
+
+    // Find and update the organization's hasPremium status
+    const organization = await Organization.findByIdAndUpdate(
+      organizationId,
+      { hasPremium: true },
+      { new: true }
+    );
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    return res.json({ success: true, message: "Premium activated!", hasPremium: organization.hasPremium });
+  } catch (error) {
+    console.error("Error upgrading to premium:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 module.exports = {
   talentProfileHandler,
   organizationHandler,
   organizationProfileEditHandler,
   talentSettings,
+  checkPremiumStatus,
+  buyPremium,
 };

@@ -10,9 +10,14 @@ const {
   organizationHandler,
   talentSettings,
   organizationProfileEditHandler,
+  checkPremiumStatus,
+  buyPremium,
 } = require("../controllers/profile");
 
 const router = express();
+
+router.get("/profile/check-premium/:userId", checkPremiumStatus);
+router.post("/profile/buy-premium/:organizationId", buyPremium);
 
 router.put(
   "/talent/update-profile/:id",
